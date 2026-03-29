@@ -2,348 +2,504 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Level Design Editor v2 - Final</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>127섹션 가챠 시뮬레이터 - Final Ver.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(15, 40px);
-            grid-template-rows: repeat(15, 40px);
-            background-color: #fff;
-            border: 2px solid #000;
-            width: 600px; /* 15 * 40px */
-            height: 600px; /* 15 * 40px */
-            gap: 0;
-            position: relative;
-            box-sizing: content-box;
-        }
-        .tile {
-            width: 40px;
-            height: 40px;
-            background-color: white;
-            cursor: crosshair;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            text-align: center;
-            user-select: none;
-            position: relative;
-            box-sizing: border-box;
-            word-break: break-all;
-            line-height: 1.1;
-            padding: 2px;
-        }
-        .editing-mode .tile {
-            outline: 0.1px solid rgba(0,0,0,0.05);
-        }
-        .active-tool {
-            outline: 3px solid #3b82f6;
-            transform: scale(1.05);
+        :root {
+            --ssr-color: #FFD700;
+            --sr-color: #A335EE;
+            --r-color: #0070DD;
+            --bg-dark: #121214; 
+            --flash-color: white;
+            --hazard-color: #ffcc00;
         }
 
-        /* 타일 타입별 스타일 */
-        .tile-shelf { background-color: #d2a679; }
-        .tile-dirt { background-color: #7a5c3f; }
-        .tile-wall { background-color: #000; }
-        .tile-door-can-open { border-top: 3px double #000; border-bottom: 3px double #000; }
-        .tile-door-locked { border-top: 3px double #ff6b6b; border-bottom: 3px double #ff6b6b; }
-        .tile-window { border-top: 2px dashed #666; border-bottom: 2px dashed #666; }
-        .tile-fixed-item { background-color: #a0d8ef; border-radius: 8px; margin: 2px; width: 36px; height: 36px; }
-        .tile-memory { background-color: #ffadad; border-radius: 8px; margin: 2px; width: 36px; height: 36px; }
-        .tile-water { background-color: #778fcc; }
-        .tile-leaves { background-color: #6d7a5f; }
-
-        /* 드래그 미리보기 스타일 */
-        .preview-rect {
-            position: absolute;
-            background-color: rgba(59, 130, 246, 0.3);
-            border: 2px solid #3b82f6;
-            pointer-events: none;
-            z-index: 50;
-            display: none;
+        /* 로딩 화면 스타일 */
+        #loading-screen {
+            position: fixed; inset: 0; background-color: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s;
         }
+        .biohazard-loader { position: relative; width: 150px; height: 150px; animation: bio-rotate 3s linear infinite; }
+        .bio-circle { position: absolute; width: 70px; height: 70px; border: 12px solid var(--hazard-color); border-radius: 50%; }
+        .bc1 { top: 0; left: 50%; transform: translateX(-50%); }
+        .bc2 { bottom: 10px; left: 0; }
+        .bc3 { bottom: 10px; right: 0; }
+        .bio-center-mask { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 55px; height: 55px; background-color: #000; border-radius: 50%; z-index: 2; border: 8px solid var(--hazard-color); }
+        .loading-text { margin-top: 60px; color: var(--hazard-color); font-family: 'Courier New', Courier, monospace; font-weight: bold; letter-spacing: 3px; text-align: center; animation: pulse-text 1.5s infinite; }
+        @keyframes bio-rotate { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .loaded #loading-screen { opacity: 0; visibility: hidden; }
+
+        /* 기본 스타일 */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; user-select: none; }
+        .bg-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-size: cover; background-position: center; transition: opacity 0.8s ease-in-out; z-index: 0; }
+        .main-wrapper { position: relative; display: flex; width: 100vw; height: 100vh; z-index: 1; background: transparent; }
+        
+        /* 사이드바 */
+        .sidebar { width: 130px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); display: flex; flex-direction: column; gap: 15px; padding: 20px 10px; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; justify-content: center; }
+        .banner-tab { width: 100px; height: 45px; background: rgba(50, 50, 50, 0.6); border: 1px solid #444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; color: #aaa; transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1); text-align: center; }
+        .banner-tab:hover { background: rgba(80, 80, 80, 0.8); }
+        .banner-tab.active { width: 115px; height: 65px; border-color: var(--ssr-color); color: white; background: rgba(20, 20, 20, 0.95); font-weight: bold; font-size: 0.95rem; transform: translateX(5px); box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+        
+        /* 콘텐츠 영역 */
+        .content-body { flex: 1; position: relative; display: flex; align-items: center; padding: 0 50px; }
+        .content-body::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, transparent 100%); z-index: -1; pointer-events: none; }
+        
+        /* 배너 정보 박스 */
+        .banner-info { position: relative; width: 450px; background: rgba(255, 255, 255, 0.9); color: #333; padding: 40px 30px; border-radius: 0 40px 0 0; clip-path: polygon(0 0, 100% 0, 92% 100%, 0% 100%); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: -50px; }
+        
+        /* 우측 상단 누적 카운터 */
+        .total-pull-counter {
+            position: absolute; top: 20px; right: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        /* 하단 바 (버튼 영역) */
+        .bottom-bar { position: absolute; bottom: 40px; right: 60px; display: flex; gap: 20px; z-index: 5; align-items: center; }
+        
+        /* 확률 정보 버튼 스타일 */
+        .rate-info-btn {
+            background: transparent; color: #aaa; border: 1px solid #666; 
+            padding: 10px 15px; border-radius: 4px; cursor: pointer; 
+            font-size: 0.9rem; margin-right: 10px; transition: 0.3s;
+        }
+        .rate-info-btn:hover { color: white; border-color: white; background: rgba(255,255,255,0.1); }
+
+        .warp-btn { background: white; color: black; border: none; padding: 15px 45px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 1.2rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); transition: transform 0.1s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .warp-btn:active { transform: scale(0.95); }
+
+        /* 가챠 이펙트 */
+        #gacha-overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: none; overflow: hidden; }
+        #bg-glow { position: absolute; inset: 0; background: radial-gradient(circle at center, var(--flash-color) 0%, transparent 70%); opacity: 0; transition: opacity 1s; mix-blend-mode: screen; z-index: 101; }
+        #fog-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s; background: radial-gradient(circle at 50% 100%, rgba(255,255,255,0.8) 0%, transparent 100%); mix-blend-mode: screen; z-index: 105; }
+        .meteor { position: absolute; width: 300px; height: 4px; transform: rotate(-45deg); opacity: 0; z-index: 110; pointer-events: none; }
+        @keyframes shoot-diagonal-irregular { 0% { transform: translate(0, 0) rotate(-45deg) scale(0.5); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-150vw, 150vh) rotate(-45deg) scale(2); opacity: 0; } }
+        #final-impact { position: absolute; top: 50%; left: 50%; width: 0; height: 0; border-radius: 50%; background: #222; z-index: 120; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; }
+        .fissure { position: absolute; background: var(--flash-color); opacity: 0; box-shadow: 0 0 20px var(--flash-color); }
+        .fissure.h { width: 110%; height: 3px; transform: rotate(15deg); }
+        .fissure.v { width: 3px; height: 110%; transform: rotate(-25deg); }
+        .fissure.d { width: 110%; height: 2px; transform: rotate(70deg); }
+        .anim-stage-1 #fog-layer, .anim-stage-1 #bg-glow { opacity: 0.4; }
+        .anim-stage-2 #final-impact { animation: impact-scale 0.6s forwards; }
+        .anim-stage-3 .fissure.h { animation: crack-appear 0.2s 0.1s forwards; }
+        .anim-stage-3 .fissure.v { animation: crack-appear 0.2s 0.3s forwards; }
+        .anim-stage-3 .fissure.d { animation: crack-appear 0.2s 0.5s forwards; }
+        @keyframes impact-scale { 0% { width: 0; height: 0; } 100% { width: 280px; height: 280px; } }
+        @keyframes crack-appear { from { opacity: 0; transform: scale(0.5) rotate(inherit); } to { opacity: 1; transform: scale(1) rotate(inherit); } }
+        
+        /* 결과 화면 */
+        .pictogram-box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: #ddd; transition: all 0.3s; }
+        .SSR .pictogram-box { color: var(--ssr-color); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)); }
+        .SR .pictogram-box { color: var(--sr-color); filter: drop-shadow(0 0 8px rgba(163, 53, 238, 0.5)); }
+        .R .pictogram-box { color: #888; }
+        #single-reveal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 150; display: none; align-items: center; justify-content: center; cursor: pointer; transition: background 0.5s; }
+        .reveal-glow { position: absolute; inset: 0; background: radial-gradient(circle at center, var(--current-item-color) 0%, transparent 60%); opacity: 0.3; pointer-events: none; }
+        .reveal-item-wrapper { text-align: center; animation: item-appear 0.5s ease-out; z-index: 151; display:flex; flex-direction: column; align-items: center; }
+        .reveal-icon-large { font-size: 10rem; margin-bottom: 30px; color: var(--current-item-color); filter: drop-shadow(0 0 40px var(--current-item-color)); }
+        .reveal-item-name { font-size: 2.5rem; font-weight: bold; margin: 0; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        @keyframes item-appear { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* 결과 그리드 */
+        #result-grid-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .grid-container { display: grid; grid-template-columns: repeat(5, 150px); gap: 20px; }
+        .card { width: 150px; height: 180px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; background: #222; border: 1px solid #444; position: relative; overflow: hidden; justify-content: center; }
+        .card-content { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .card-icon { font-size: 3.5rem; }
+        .card-name { font-size: 0.8rem; padding: 10px 5px; text-align: center; color: #eee; background: rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
+        .card.SSR { border: 2px solid var(--ssr-color); box-shadow: 0 0 15px rgba(255,215,0,0.2); }
+        .card.SR { border: 2px solid var(--sr-color); }
+        .card.SSR .card-icon { color: var(--ssr-color); }
+        .card.SR .card-icon { color: var(--sr-color); }
+        .card.R .card-icon { color: #888; }
+
+        /* 인벤토리 오버레이 및 패널 */
+        #inventory-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 290; display: none; opacity: 0; transition: opacity 0.5s; }
+        #inventory-overlay.active { opacity: 1; }
+        
+        #inventory-panel { position: fixed; left: 0; bottom: -100%; width: 100%; height: 80%; background: #111; z-index: 300; transition: 0.5s; padding: 30px; border-top: 3px solid #444; box-sizing: border-box; overflow-y: auto; }
+        #inventory-panel.open { bottom: 0; }
+        .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close-btn { background: #666; color: white; border: none; padding: 10px 25px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: background 0.2s; }
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .inv-card { width: 100%; aspect-ratio: 3/4; background: #222; border-radius: 5px; border: 1px solid #333; position: relative; display: flex; flex-direction: column; font-size: 0.7rem; overflow: hidden; cursor: pointer; align-items: center; }
+        .inv-card .inv-icon { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+        .inv-card .count-tag { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 6px; border-radius: 10px; font-weight: bold; z-index: 2; }
+        .inv-card.SSR { border-color: var(--ssr-color); } .inv-card.SSR .inv-icon { color: var(--ssr-color); }
+        .inv-card.SR { border-color: var(--sr-color); } .inv-card.SR .inv-icon { color: var(--sr-color); }
+
+        .filter-btn { background: #333; border: 1px solid #555; color: #888; padding: 5px 15px; border-radius: 20px; cursor: pointer; margin-right: 5px; font-size: 0.9rem; transition: all 0.2s; }
+        .filter-btn.active { color: white; border-color: white; font-weight: bold; }
+        .filter-btn.active[data-grade="SSR"] { background: var(--ssr-color); border-color: var(--ssr-color); color: black; }
+        .filter-btn.active[data-grade="SR"] { background: var(--sr-color); border-color: var(--sr-color); }
+        .filter-btn.active[data-grade="R"] { background: var(--r-color); border-color: var(--r-color); }
+
+        /* 확률 정보 팝업 */
+        #rate-popup { position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); }
+        .rate-content { width: 400px; background: #222; border: 1px solid #444; padding: 30px; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative; }
+        .rate-table { width: 100%; border-collapse: collapse; margin-top: 20px; color: #ddd; font-size: 0.9rem; }
+        .rate-table th, .rate-table td { border-bottom: 1px solid #444; padding: 10px; text-align: left; }
+        .rate-table th { color: #888; }
+        
+        #item-detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 400; display: none; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; }
+        .pity-counter { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 5px; font-size: 0.85rem; border-left: 4px solid #666; color: #555; font-weight: bold; }
+        select { background:#333; color:white; border:1px solid #555; padding:5px; border-radius:5px; outline:none; font-size: 0.9rem; }
     </style>
 </head>
-<body class="bg-slate-50 p-8">
-    <div class="max-w-5xl mx-auto">
-        <header class="mb-6 flex justify-between items-end">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">레벨 디자인 에디터 v2</h1>
-                <p class="text-sm text-slate-500 mt-1">좌클릭 드래그: 사각형 영역 칠하기 | 휠 클릭: 타일 복사 | 기본 벽 배치</p>
-            </div>
-            <div class="flex gap-2">
-                <button id="downloadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition">
-                    이미지로 저장
-                </button>
-            </div>
-        </header>
+<body onclick="handleGlobalClick(event)">
 
-        <div class="flex gap-8 items-start">
-            <!-- 도구 상자 -->
-            <aside class="w-72 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-6 max-h-[85vh] overflow-y-auto">
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">지형 및 구조물</h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="empty">
-                            <div class="w-8 h-8 bg-white border border-slate-200 rounded"></div><span class="text-xs">지우개</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1 active-tool" data-type="wall">
-                            <div class="w-8 h-8 bg-black rounded"></div><span class="text-xs">벽</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="shelf">
-                            <div class="w-8 h-8 tile-shelf rounded"></div><span class="text-xs">선반</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="dirt">
-                            <div class="w-8 h-8 tile-dirt rounded"></div><span class="text-xs">흙더미</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="water">
-                            <div class="w-8 h-8 tile-water rounded"></div><span class="text-xs">고인 물</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="leaves">
-                            <div class="w-8 h-8 tile-leaves rounded"></div><span class="text-xs">낙엽 길</span>
-                        </button>
-                    </div>
-                </div>
+<div id="loading-screen">
+    <div class="biohazard-loader">
+        <div class="bio-circle bc1"></div>
+        <div class="bio-circle bc2"></div>
+        <div class="bio-circle bc3"></div>
+        <div class="bio-center-mask"></div>
+    </div>
+    <div class="loading-text">
+        SYSTEM INITIALIZING...<br>
+        <small style="font-size: 0.7rem; opacity: 0.8;">[BIOHAZARD PROTOCOL ACTIVE]</small>
+    </div>
+</div>
 
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">문 및 통로</h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="door-can-open">
-                            <div class="w-8 h-8 tile-door-can-open bg-white"></div><span class="text-xs">열리는 문</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="door-locked">
-                            <div class="w-8 h-8 tile-door-locked bg-white"></div><span class="text-xs">잠긴 문</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="window">
-                            <div class="w-8 h-8 tile-window bg-white"></div><span class="text-xs">창문</span>
-                        </button>
-                    </div>
-                </div>
+<div id="bg-layer-1" class="bg-layer"></div>
+<div id="bg-layer-2" class="bg-layer" style="opacity: 0;"></div>
 
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">아이템</h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="fixed-item">
-                            <div class="w-8 h-8 tile-fixed-item"></div><span class="text-xs">확정 아이템</span>
-                        </button>
-                        <button class="tool-btn p-2 border rounded-xl flex flex-col items-center gap-1" data-type="memory">
-                            <div class="w-8 h-8 tile-memory"></div><span class="text-xs">기억 조각</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">텍스트 타일 설정</h3>
-                    <div class="space-y-2">
-                        <input type="text" id="customText" placeholder="내용" class="w-full border p-2 text-sm rounded-lg" value="아이템">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-500">배경색:</span>
-                            <input type="color" id="customColor" value="#f1f5f9" class="h-8 w-12 border-none p-0 cursor-pointer rounded">
-                        </div>
-                        <button class="tool-btn w-full p-2 border rounded-lg bg-slate-50 text-xs font-bold" data-type="custom">
-                            텍스트 타일 도구 선택
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            <main class="flex-1 flex justify-center py-4 bg-slate-200 rounded-3xl overflow-hidden shadow-inner border-8 border-white relative min-h-[700px]">
-                <div id="grid" class="grid-container editing-mode">
-                    <!-- 타일들이 생성됨 -->
-                    <div id="preview" class="preview-rect"></div>
-                </div>
-            </main>
-        </div>
+<div class="main-wrapper" id="main-wrapper">
+    <div class="sidebar" id="sidebar"></div>
+    
+    <div class="total-pull-counter">
+        <i class="fa-solid fa-ticket"></i>
+        <span>Total Protocol: <span id="total-pull-count">0</span></span>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script>
-        const grid = document.getElementById('grid');
-        const previewRect = document.getElementById('preview');
-        const toolBtns = document.querySelectorAll('.tool-btn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const customTextInput = document.getElementById('customText');
-        const customColorInput = document.getElementById('customColor');
+    <div class="content-body" id="content-body">
+        <div class="banner-info">
+            <h2 id="banner-title" style="margin-top:0;">Loading...</h2>
+            <p id="pickup-target" style="color: #d9534f; font-weight: bold; margin-bottom: 15px;">Pick Up: ???</p>
+            <div class="pity-counter">
+                <div id="pity-ssr-text">SSR 확정까지: 80회</div>
+                <div id="pity-pickup-text">픽업 확정까지: 150회</div>
+                <div id="pity-sr-text">SR 확정까지: 10회</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-bar">
+        <button class="rate-info-btn" onclick="toggleRatePopup(true); event.stopPropagation();">
+            <i class="fa-solid fa-circle-info"></i> 확률 정보
+        </button>
+        <button class="warp-btn" onclick="runGacha(1); event.stopPropagation();">Warp x1</button>
+        <button class="warp-btn" onclick="runGacha(10); event.stopPropagation();">Warp x10</button>
+        <button onclick="toggleInv(true); event.stopPropagation();" style="background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.5); color:white; cursor:pointer; padding:10px 25px; border-radius:30px; backdrop-filter:blur(5px); font-weight:bold;">Inventory</button>
+    </div>
+</div>
 
-        let currentTool = 'wall';
-        let isDragging = false;
-        let startX = 0;
-        let startY = 0;
-        let tiles = [];
+<div id="gacha-overlay">
+    <div id="bg-glow"></div>
+    <div id="fog-layer"></div>
+    <div id="meteor-layer"></div>
+    <div id="final-impact"><div class="fissure h"></div><div class="fissure v"></div><div class="fissure d"></div></div>
+</div>
 
-        const GRID_SIZE = 15;
-        const TILE_SIZE = 40;
+<div id="single-reveal">
+    <div class="reveal-glow" id="dynamic-reveal-glow"></div>
+    <div id="reveal-content"></div>
+</div>
 
-        // 그리드 초기화 (기본 벽 상태)
-        function initGrid() {
-            // 프리뷰 요소를 제외하고 그리드 내부 비우기
-            const previewEl = document.getElementById('preview');
-            grid.innerHTML = '';
-            grid.appendChild(previewEl);
-            tiles = [];
-            
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const tile = document.createElement('div');
-                    tile.classList.add('tile');
-                    tile.dataset.x = x;
-                    tile.dataset.y = y;
-                    
-                    // 초기 상태: 벽
-                    setTileState(tile, 'wall');
-                    
-                    tile.addEventListener('mousedown', (e) => {
-                        if (e.button === 0) { // 좌클릭
-                            isDragging = true;
-                            startX = x;
-                            startY = y;
-                            updatePreview(x, y, x, y);
-                        } else if (e.button === 1) { // 휠클릭 (스포이드)
-                            e.preventDefault();
-                            selectTool(tile.dataset.type, tile.innerText, tile.style.backgroundColor);
-                        }
-                    });
+<div id="result-grid-screen" onclick="closeAllResults(); event.stopPropagation();">
+    <div class="grid-container" id="grid-container"></div>
+    <p style="color:#888; margin-top:30px; font-weight:bold;">화면을 탭하여 닫기</p>
+</div>
 
-                    tile.addEventListener('mouseenter', () => {
-                        if (isDragging) {
-                            updatePreview(startX, startY, x, y);
-                        }
-                    });
+<div id="inventory-overlay" onclick="toggleInv(false)"></div>
 
-                    tile.addEventListener('contextmenu', (e) => e.preventDefault());
-                    grid.appendChild(tile);
-                    tiles.push(tile);
-                }
-            }
-        }
+<div id="inventory-panel" onclick="event.stopPropagation();">
+    <div class="inv-header">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <h2>보관함</h2>
+            <div id="filter-buttons">
+                <button class="filter-btn active" data-grade="SSR" onclick="toggleFilter('SSR')">SSR</button>
+                <button class="filter-btn active" data-grade="SR" onclick="toggleFilter('SR')">SR</button>
+                <button class="filter-btn active" data-grade="R" onclick="toggleFilter('R')">R</button>
+            </div>
+            <select id="sort-order" onchange="renderInventory()"><option value="latest">최신순</option><option value="count">많은 순</option></select>
+        </div>
+        <button class="close-btn" onclick="toggleInv(false)">닫기</button>
+    </div>
+    <div class="inv-grid" id="inv-grid"></div>
+</div>
 
-        window.addEventListener('mouseup', (e) => {
-            if (isDragging && e.button === 0) {
-                isDragging = false;
-                // 타겟의 좌표를 가져오거나 없으면 시작 좌표 사용
-                const targetX = e.target.dataset ? parseInt(e.target.dataset.x ?? startX) : startX;
-                const targetY = e.target.dataset ? parseInt(e.target.dataset.y ?? startY) : startY;
-                
-                const rect = getRect(startX, startY, targetX, targetY);
-                applyToolToRect(rect);
-                previewRect.style.display = 'none';
-            }
+<div id="rate-popup" onclick="toggleRatePopup(false)">
+    <div class="rate-content" onclick="event.stopPropagation()">
+        <h3 style="margin-top:0; border-bottom:1px solid #555; padding-bottom:15px;">확률 상세 정보</h3>
+        <p style="color:#aaa; font-size:0.85rem; line-height:1.4;">
+            ※ 127섹션 특별 보급 프로토콜의 등급별 획득 확률입니다.<br>
+            ※ SSR 등급 획득 시 50% 확률로 픽업 대상이 등장합니다.
+        </p>
+        <table class="rate-table">
+            <tr>
+                <th style="color:var(--ssr-color)">SSR</th>
+                <td>1.00%</td>
+                <td>최고위 기술 장비/코스튬</td>
+            </tr>
+            <tr>
+                <th style="color:var(--sr-color)">SR</th>
+                <td>13.00%</td>
+                <td>중급 전술 장비</td>
+            </tr>
+            <tr>
+                <th style="color:#888">R</th>
+                <td>86.00%</td>
+                <td>일반 생존 물품</td>
+            </tr>
+        </table>
+        <button onclick="toggleRatePopup(false)" style="margin-top:20px; width:100%; padding:10px; background:#444; border:none; color:white; border-radius:4px; cursor:pointer;">닫기</button>
+    </div>
+</div>
+
+<div id="item-detail-view" onclick="hideItemDetail(event)"><div id="detail-content" class="reveal-item-wrapper"></div></div>
+
+<script>
+    /* 로딩 제어 */
+    window.addEventListener('load', () => { setTimeout(() => { document.body.classList.add('loaded'); }, 1800); });
+
+    /* 데이터 및 변수 */
+    const iconMap = {
+        "보랏빛 드론 소년 코스튬": "fa-robot", "녹색빛 연구원 소년 코스튬": "fa-flask", "붉은빛 경보 생존자 코스튬": "fa-bell",
+        "푸른빛 정찰병 소년 코스튬": "fa-binoculars", "검은빛 기술자 소년 코스튬": "fa-wrench", "노란빛 방사능 차단 코스튬": "fa-biohazard",
+        "주황빛 감시자 소년 코스튬": "fa-eye", "헤진 방호복": "fa-user-shield", "폐허 탐색자 재킷": "fa-person-hiking",
+        "임시 연구원 가운": "fa-user-nurse", "오염 지대 작업복": "fa-mask-ventilator", "붕대 감은 생존자 복장": "fa-user-injured",
+        "정찰병 후드 코트": "fa-user-secret", "폐기된 군용 유니폼": "fa-shirt", "방진 마스크 생존복": "fa-head-side-mask",
+        "도시 러너 복장": "fa-person-running", "임시 강화 보호복": "fa-shield-halved", "낡은 청바지 코스튬": "fa-socks",
+        "해진 티셔츠": "fa-tshirt", "평범한 작업복": "fa-vest", "오래된 학생복": "fa-user-graduate", "생존자 기본 셔츠": "fa-layer-group",
+        "낡은 운동복": "fa-person-walking", "보급용 방한복": "fa-snowflake", "낡은 재킷": "fa-vest-patches", "기초 보호 복장": "fa-hard-hat"
+    };
+
+    const itemPool = {
+        SSR: ["보랏빛 드론 소년 코스튬", "녹색빛 연구원 소년 코스튬", "붉은빛 경보 생존자 코스튬", "푸른빛 정찰병 소년 코스튬", "검은빛 기술자 소년 코스튬", "노란빛 방사능 차단 코스튬", "주황빛 감시자 소년 코스튬"],
+        SR: ["헤진 방호복", "폐허 탐색자 재킷", "임시 연구원 가운", "오염 지대 작업복", "붕대 감은 생존자 복장", "정찰병 후드 코트", "폐기된 군용 유니폼", "방진 마스크 생존복", "도시 러너 복장", "임시 강화 보호복"],
+        R: ["낡은 청바지 코스튬", "해진 티셔츠", "평범한 작업복", "오래된 학생복", "생존자 기본 셔츠", "낡은 운동복", "보급용 방한복", "낡은 재킷", "기초 보호 복장"]
+    };
+
+    const bannerImages = [
+        "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1615840287214-7ff58936c4cf?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1475113548554-5a36f1f523d6?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1569691105751-88b00b5729a8?auto=format&fit=crop&w=1600&q=80"
+    ];
+
+    const banners = [
+        { id: 1, name: "드론 소년", pickup: "보랏빛 드론 소년 코스튬" },
+        { id: 2, name: "연구원 소년", pickup: "녹색빛 연구원 소년 코스튬" },
+        { id: 3, name: "경보 생존자", pickup: "붉은빛 경보 생존자 코스튬" },
+        { id: 4, name: "정찰병 소년", pickup: "푸른빛 정찰병 소년 코스튬" },
+        { id: 5, name: "기술자 소년", pickup: "검은빛 기술자 소년 코스튬" },
+        { id: 6, name: "방사능 차단", pickup: "노란빛 방사능 차단 코스튬" }
+    ];
+
+    let currentIdx = 0, gachaState = "idle", currentResults = [], revealIndex = 0, timeouts = [], inventory = {}, invOpen = false;
+    let cntSR = 0, cntSSR = 0, cntPickup = 0, totalPullCount = 0; // 누적 카운트 변수 추가
+    let activeFilters = new Set(['SSR', 'SR', 'R']);
+    let activeBgLayer = 1;
+
+    function init() {
+        const sidebar = document.getElementById('sidebar');
+        banners.forEach((b, i) => {
+            const t = document.createElement('div');
+            t.className = `banner-tab ${i===0?'active':''}`;
+            t.innerText = b.name;
+            t.onclick = (e) => { e.stopPropagation(); switchBanner(i); };
+            sidebar.appendChild(t);
         });
+        document.getElementById('bg-layer-1').style.backgroundImage = `url('${bannerImages[0]}')`;
+        switchBanner(0);
+        updatePityDisplay();
+    }
 
-        function getRect(x1, y1, x2, y2) {
-            return {
-                left: Math.min(x1, x2),
-                top: Math.min(y1, y2),
-                right: Math.max(x1, x2),
-                bottom: Math.max(y1, y2)
-            };
-        }
+    function switchBanner(i) {
+        currentIdx = i;
+        const b = banners[i];
+        document.getElementById('banner-title').innerText = b.name + " 픽업";
+        document.getElementById('pickup-target').innerText = `Pick Up: ${b.pickup}`;
+        document.querySelectorAll('.banner-tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+        const bgUrl = bannerImages[i % bannerImages.length];
+        const layer1 = document.getElementById('bg-layer-1'), layer2 = document.getElementById('bg-layer-2');
+        if (activeBgLayer === 1) { layer2.style.backgroundImage = `url('${bgUrl}')`; layer2.style.opacity = '1'; layer1.style.opacity = '0'; activeBgLayer = 2; }
+        else { layer1.style.backgroundImage = `url('${bgUrl}')`; layer1.style.opacity = '1'; layer2.style.opacity = '0'; activeBgLayer = 1; }
+    }
 
-        function updatePreview(x1, y1, x2, y2) {
-            const rect = getRect(x1, y1, x2, y2);
-            previewRect.style.display = 'block';
-            previewRect.style.left = (rect.left * TILE_SIZE) + 'px';
-            previewRect.style.top = (rect.top * TILE_SIZE) + 'px';
-            previewRect.style.width = ((rect.right - rect.left + 1) * TILE_SIZE) + 'px';
-            previewRect.style.height = ((rect.bottom - rect.top + 1) * TILE_SIZE) + 'px';
-        }
+    function updatePityDisplay() {
+        document.getElementById('pity-ssr-text').innerText = `SSR 확정까지: ${80 - cntSSR}회`;
+        document.getElementById('pity-pickup-text').innerText = `픽업 확정까지: ${150 - cntPickup}회`;
+        document.getElementById('pity-sr-text').innerText = `SR 확정까지: ${10 - cntSR}회`;
+    }
 
-        function applyToolToRect(rect) {
-            tiles.forEach(tile => {
-                const tx = parseInt(tile.dataset.x);
-                const ty = parseInt(tile.dataset.y);
-                if (tx >= rect.left && tx <= rect.right && ty >= rect.top && ty <= rect.bottom) {
-                    setTileState(tile, currentTool);
-                }
-            });
-        }
+    function runGacha(count) {
+        if(gachaState !== "idle") return;
+        gachaState = "intro";
+        currentResults = []; revealIndex = 0; timeouts = [];
+        const currentBanner = banners[currentIdx];
+        let maxRarity = 'R'; 
+        
+        // 누적 횟수 증가 및 UI 업데이트
+        totalPullCount += count;
+        document.getElementById('total-pull-count').innerText = totalPullCount;
 
-        function setTileState(tile, type) {
-            tile.className = 'tile';
-            tile.innerText = '';
-            tile.style.backgroundColor = '';
-            tile.dataset.type = type;
-
-            switch (type) {
-                case 'wall': tile.classList.add('tile-wall'); break;
-                case 'shelf': tile.classList.add('tile-shelf'); break;
-                case 'dirt': tile.classList.add('tile-dirt'); break;
-                case 'water': tile.classList.add('tile-water'); break;
-                case 'leaves': tile.classList.add('tile-leaves'); break;
-                case 'door-can-open': tile.classList.add('tile-door-can-open'); break;
-                case 'door-locked': tile.classList.add('tile-door-locked'); break;
-                case 'window': tile.classList.add('tile-window'); break;
-                case 'fixed-item': tile.classList.add('tile-fixed-item'); break;
-                case 'memory': tile.classList.add('tile-memory'); break;
-                case 'custom':
-                    tile.innerText = customTextInput.value;
-                    tile.style.backgroundColor = customColorInput.value;
-                    break;
-                case 'empty':
-                default:
-                    tile.style.backgroundColor = 'white';
-                    break;
+        for(let i=0; i<count; i++) {
+            let rarity = 'R', itemName = '', isPickup = false;
+            let r = Math.random() * 100;
+            if (cntPickup >= 149) { rarity = 'SSR'; itemName = currentBanner.pickup; isPickup = true; }
+            else if (cntSSR >= 79) {
+                rarity = 'SSR';
+                if (Math.random() < 0.5) { itemName = currentBanner.pickup; isPickup = true; }
+                else { itemName = itemPool.SSR.filter(n => n !== currentBanner.pickup)[Math.floor(Math.random()*6)]; }
             }
-        }
-
-        function selectTool(type, text = "", color = "") {
-            toolBtns.forEach(btn => {
-                btn.classList.remove('active-tool');
-                if (btn.getAttribute('data-type') === type) btn.classList.add('active-tool');
-            });
-            currentTool = type;
-            if (type === 'custom') {
-                if (text) customTextInput.value = text;
-                if (color) {
-                    // RGB to HEX 변환 (스포이드용)
-                    if (color.startsWith('rgb')) {
-                        const rgb = color.match(/\d+/g);
-                        const hex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
-                        customColorInput.value = hex;
-                    }
-                }
+            else if (cntSR >= 9 && r >= 1) { rarity = 'SR'; itemName = itemPool.SR[Math.floor(Math.random()*itemPool.SR.length)]; }
+            else {
+                if (r < 1) {
+                    rarity = 'SSR';
+                    if (Math.random() < 0.5) { itemName = currentBanner.pickup; isPickup = true; }
+                    else { itemName = itemPool.SSR[Math.floor(Math.random()*itemPool.SSR.length)]; }
+                } else if (r < 14) { rarity = 'SR'; itemName = itemPool.SR[Math.floor(Math.random()*itemPool.SR.length)]; }
+                else { rarity = 'R'; itemName = itemPool.R[Math.floor(Math.random()*itemPool.R.length)]; }
             }
+            if (rarity === 'SSR') { cntSSR = 0; cntSR = 0; if (isPickup) cntPickup = 0; else cntPickup++; maxRarity = 'SSR'; }
+            else if (rarity === 'SR') { cntSR = 0; cntSSR++; cntPickup++; if(maxRarity !== 'SSR') maxRarity = 'SR'; }
+            else { cntSR++; cntSSR++; cntPickup++; }
+            currentResults.push({ rarity, name: itemName });
+            updateInventory(itemName, rarity);
         }
+        updatePityDisplay();
+        triggerAnimation(maxRarity);
+    }
 
-        toolBtns.forEach(btn => {
-            btn.addEventListener('click', () => selectTool(btn.getAttribute('data-type')));
+    function updateInventory(name, rarity) {
+        if (inventory[name]) { inventory[name].count++; inventory[name].timestamp = Date.now(); }
+        else { inventory[name] = { rarity, count: 1, timestamp: Date.now() }; }
+    }
+
+    function triggerAnimation(maxRarity) {
+        const overlay = document.getElementById('gacha-overlay');
+        const flashColor = maxRarity === 'SSR' ? 'var(--ssr-color)' : (maxRarity === 'SR' ? 'var(--sr-color)' : 'var(--r-color)');
+        document.documentElement.style.setProperty('--flash-color', flashColor);
+        overlay.style.display = 'block'; overlay.className = '';
+        const meteorLayer = document.getElementById('meteor-layer'); meteorLayer.innerHTML = '';
+        for(let i=0; i<12; i++) {
+            const m = document.createElement('div'); m.className = 'meteor';
+            m.style.background = `linear-gradient(90deg, white, ${flashColor}, transparent)`;
+            m.style.top = (Math.random() * -30) + "vh"; m.style.right = (Math.random() * -20) + "vw";
+            m.style.animation = `shoot-diagonal-irregular ${0.6 + Math.random()*0.5}s ease-in ${Math.random()*0.6}s forwards`;
+            meteorLayer.appendChild(m);
+        }
+        timeouts.push(setTimeout(() => overlay.classList.add('anim-stage-1'), 50));
+        timeouts.push(setTimeout(() => overlay.classList.add('anim-stage-2'), 1000));
+        timeouts.push(setTimeout(() => overlay.classList.add('anim-stage-3'), 1600));
+        timeouts.push(setTimeout(() => startRevealSequence(), 2500));
+    }
+
+    function startRevealSequence() {
+        gachaState = "revealing";
+        document.getElementById('gacha-overlay').style.display = 'none';
+        document.getElementById('single-reveal').style.display = 'flex';
+        renderItemReveal();
+    }
+
+    function renderItemReveal() {
+        const item = currentResults[revealIndex];
+        const content = document.getElementById('reveal-content');
+        const colorVar = `var(--${item.rarity.toLowerCase()}-color)`;
+        content.innerHTML = `
+            <div class="reveal-item-wrapper">
+                <i class="fa-solid ${iconMap[item.name] || 'fa-question'} reveal-icon-large"></i>
+                <h1 class="reveal-item-name" style="color:${colorVar}">${item.name}</h1>
+                <h3 style="margin:10px 0 0 0; color:#888;">${item.rarity}</h3>
+            </div>`;
+    }
+
+    function handleGlobalClick(e) {
+        if (invOpen || !document.body.classList.contains('loaded')) return;
+        if (gachaState === "intro") { timeouts.forEach(clearTimeout); showFinalGrid(); }
+        else if (gachaState === "revealing") {
+            revealIndex++;
+            if (revealIndex < currentResults.length) renderItemReveal();
+            else showFinalGrid();
+        }
+    }
+
+    function showFinalGrid() {
+        gachaState = "finished";
+        document.getElementById('single-reveal').style.display = 'none';
+        const grid = document.getElementById('grid-container'); grid.innerHTML = '';
+        document.getElementById('result-grid-screen').style.display = 'flex';
+        currentResults.forEach(item => {
+            const card = document.createElement('div'); card.className = `card ${item.rarity}`;
+            card.innerHTML = `<div class="card-content"><i class="fa-solid ${iconMap[item.name] || 'fa-question'} card-icon"></i></div><div class="card-name">${item.name}</div>`;
+            grid.appendChild(card);
         });
+    }
 
-        clearBtn.addEventListener('click', () => {
-            if(confirm("모든 타일을 벽으로 다시 채우시겠습니까?")) {
-                initGrid();
-            }
+    function closeAllResults() { document.getElementById('result-grid-screen').style.display = 'none'; gachaState = "idle"; }
+    
+    // 인벤토리 열기/닫기 (오버레이 포함)
+    function toggleInv(show) { 
+        invOpen = show; 
+        if (show) renderInventory(); 
+        document.getElementById('inventory-panel').classList.toggle('open', show);
+        const overlay = document.getElementById('inventory-overlay');
+        if(show) {
+            overlay.style.display = 'block';
+            setTimeout(() => overlay.classList.add('active'), 10);
+        } else {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.style.display = 'none', 500);
+        }
+    }
+    
+    // 확률 정보 팝업 토글
+    function toggleRatePopup(show) {
+        document.getElementById('rate-popup').style.display = show ? 'flex' : 'none';
+    }
+
+    function toggleFilter(grade) { if (activeFilters.has(grade)) activeFilters.delete(grade); else activeFilters.add(grade); document.querySelector(`.filter-btn[data-grade="${grade}"]`).classList.toggle('active', activeFilters.has(grade)); renderInventory(); }
+
+    function renderInventory() {
+        const container = document.getElementById('inv-grid');
+        const sortType = document.getElementById('sort-order').value;
+        container.innerHTML = '';
+        let keys = Object.keys(inventory).filter(k => activeFilters.has(inventory[k].rarity));
+        if (sortType === 'latest') keys.sort((a, b) => inventory[b].timestamp - inventory[a].timestamp);
+        else if (sortType === 'count') keys.sort((a, b) => inventory[b].count - inventory[a].count);
+        keys.forEach(name => {
+            const data = inventory[name];
+            const card = document.createElement('div'); card.className = `inv-card ${data.rarity}`;
+            card.onclick = (e) => { e.stopPropagation(); showItemDetail(name, data.rarity); };
+            card.innerHTML = `<div class="count-tag">x${data.count}</div><div class="inv-icon"><i class="fa-solid ${iconMap[name] || 'fa-question'}"></i></div><div style="padding:5px; text-align:center; background:rgba(0,0,0,0.6); width:100%; box-sizing:border-box;">${name}</div>`;
+            container.appendChild(card);
         });
+    }
 
-        downloadBtn.addEventListener('click', () => {
-            // 저장 전 UI 정리
-            grid.classList.remove('editing-mode');
-            previewRect.style.display = 'none';
-            
-            // 캡처 실행
-            html2canvas(grid, {
-                backgroundColor: "#ffffff",
-                scale: 2,
-                logging: false,
-                useCORS: true,
-                width: 600,
-                height: 600
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `level-design-${Date.now()}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                
-                // 저장 후 가이드라인 복구
-                grid.classList.add('editing-mode');
-            });
-        });
+    function showItemDetail(name, rarity) {
+        const detailView = document.getElementById('item-detail-view');
+        const content = document.getElementById('detail-content');
+        const colorVar = `var(--${rarity.toLowerCase()}-color)`;
+        content.innerHTML = `<i class="fa-solid ${iconMap[name] || 'fa-question'} reveal-icon-large"></i><h1 style="margin:0; color:white; font-size:2rem;">${name}</h1><h3 style="color:${colorVar}">${rarity}</h3><p style="color:#888; margin-top:20px;">탭하여 보관함으로 돌아가기</p>`;
+        detailView.style.display = 'flex';
+    }
 
-        // 초기 실행
-        initGrid();
-    </script>
+    function hideItemDetail(e) { e.stopPropagation(); document.getElementById('item-detail-view').style.display = 'none'; }
+
+    init();
+</script>
 </body>
 </html>
