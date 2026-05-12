@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HARMONY // SYNTHETIC GACHA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="crosswalk-scene">
+    <div class="crosswalk-road">
+        <div class="crosswalk-track"></div>
+    </div>
+</div>
+
+<canvas id="interactive-dots-canvas"></canvas>
+
+<div id="ssr-masonry-overlay">
+    <div id="masonry-list" class="masonry-list"></div>
+</div>
+
+<div class="hud">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+</div>
+
+<div id="loading-screen">
+    <div class="loader"></div>
+    <div class="loading-text">HARMONY SYSTEM INITIALIZING</div>
+</div>
+
+<div id="bg1" class="bg-layer"></div>
+<div id="bg2" class="bg-layer" style="opacity:0"></div>
+
+<div class="main">
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="content">
+        <div class="top-ui">
+            <div class="counter">
+                TOTAL : <span id="total-count">0</span>
+            </div>
+        </div>
+
+        <div class="banner-panel">
+            <div class="system-no">01</div>
+            <h1 id="banner-title">HARMONY</h1>
+            <div class="pickup" id="pickup-text">헤드라인</div>
+            <div class="desc" id="banner-desc"></div>
+
+            <div class="pity-box">
+                <div class="pity" id="pity-ssr">SSR 확정까지 : <b>80</b>회</div>
+                <div class="pity" id="pity-sr">SR 확정까지 : <b>10</b>회</div>
+                <div class="pity" id="pity-pickup">픽업 확정까지 : <b>150</b>회</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-ui">
+        <button
+            id="debug-pickup-btn"
+            class="ui-btn debug-btn"
+            onclick="toggleDebugPickup(); event.stopPropagation();"
+        >
+            DEBUG PICKUP : OFF
+        </button>
+        <button class="ui-btn" onclick="toggleRate(true); event.stopPropagation();">확률 안내</button>
+        <button class="ui-btn" onclick="runGacha(1); event.stopPropagation();">1회 뽑기</button>
+        <button class="ui-btn" onclick="runGacha(10); event.stopPropagation();">10회 뽑기</button>
+        <button class="ui-btn" onclick="toggleInventory(true); event.stopPropagation();">INVENTORY</button>
+    </div>
+</div>
+
+<div id="gacha-overlay">
+    <div class="scan-line"></div>
+    <div class="scan-ring"></div>
+    <div class="flash-wrap">
+        <div class="flash-noise"></div>
+        <div class="flash-text">
+            <span>1</span><span>2</span><span>7</span><span>SECTION</span>
+        </div>
+    </div>
+</div>
+
+<div id="single-reveal">
+    <div id="reveal-content"></div>
+</div>
+
+<div id="result-screen" onclick="closeResult(); event.stopPropagation();">
+    <div class="grid" id="result-grid"></div>
+    <div class="tap-to-close">TAP TO CLOSE</div>
+</div>
+
+<div id="ssr-preview"
+    onclick="toggleSSRPreview(false)">
+
+        <div id="ssr-preview-image"></div>
+
+    </div>
+
+<div id="rate-popup" onclick="toggleRate(false)">
+
+    <div class="rate-box" onclick="event.stopPropagation()">
+
+        <h2 class="rate-title">
+            [ 소환 확률 안내 ]
+        </h2>
+
+        <div class="rate-section">
+
+            <div class="rate-heading">
+                1. 등급별 획득 확률
+            </div>
+
+            <div class="rate-line ssr-rate">
+                SSR: 1%
+            </div>
+
+            <div class="rate-line sr-rate">
+                SR: 13%
+            </div>
+
+            <div class="rate-line r-rate">
+                R: 86%
+            </div>
+
+        </div>
+
+        <div class="rate-section">
+
+            <div class="rate-heading">
+                2. SSR 코스튬 상세 확률
+            </div>
+
+            <div class="rate-desc">
+                SSR 등장 시, 아래의 확률에 따라 코스튬가 결정됩니다.
+            </div>
+
+            <div class="rate-line">
+                픽업 코스튬 (1종): 0.5%
+                (SSR의 50%)
+            </div>
+
+            <div class="rate-line">
+                일반 SSR (6종): 각 0.083%
+                (SSR의 50%를 배분)
+            </div>
+
+        </div>
+
+        <div class="rate-note">
+            ※ 소환 1회당 개별 확률이 적용됩니다.
+        </div>
+
+    </div>
+
+</div>
+
+<div id="inv-overlay"></div>
+
+<div id="inv-panel">
+
+    <div class="inv-header">
+        <h2 class="inv-title">INVENTORY</h2>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+            <select id="inv-sort" onchange="renderInventory()">
+                <option value="rarity">희귀도순</option>
+                <option value="count">획득량순</option>
+            </select>
+
+            <button class="ui-btn" onclick="toggleInventory(false)">
+                CLOSE
+            </button>
+        </div>
+    </div>
+
+    <div id="inv-grid" class="inv-grid"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
