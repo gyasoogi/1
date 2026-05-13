@@ -110,7 +110,7 @@ const banners = [
     pickup: "WATER COSTUME",
     pickupText: "아련한 기억을 불러일으키는 누군가의 코스튬. 한때 당신을 지켰었다",
     desc: `
-        침수된 음성 모듈에서 추출된 AFLOAT 파형.
+        침수된 음성 모듈에서 추출된 SIREN 파형.
         내충격 코스튬 및 중화 장비를 획득할 수 있다.
     `
 },
@@ -697,3 +697,23 @@ function playSSRMasonry(onComplete) {
     resizeCanvas();
     animate();
 })();
+
+function updateScale(){
+
+    const baseW = 1536;
+    const baseH = 864;
+
+    const scale = Math.min(
+        window.innerWidth / baseW,
+        window.innerHeight / baseH
+    );
+
+    const stage = document.getElementById("stage");
+
+    stage.style.transform =
+        `translate(-50%, -50%) scale(${scale})`;
+}
+
+window.addEventListener("resize", updateScale);
+
+updateScale();
