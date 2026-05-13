@@ -9,6 +9,32 @@
     font-display: swap;
 }
 
+html, body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+body{
+    position:relative;
+    background:#000;
+}
+
+#stage{
+    position:absolute;
+
+    width:1536px;
+    height:864px;
+
+    left:50%;
+    top:50%;
+
+    transform-origin:center center;
+
+    overflow:hidden;
+}
+
 /* ================= VARIABLES ================= */
 :root {
     --bg: #ececec;
@@ -51,7 +77,7 @@ html, body {
 
 body::before {
     content: ''; 
-    position: fixed; 
+    position: absolute; 
     inset: 0;
     background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.03) 65%, rgba(0, 0, 0, 0.08) 100%);
     pointer-events: none; 
@@ -72,7 +98,7 @@ img {
 
 /* ================= MAIN LAYOUT & BACKGROUND ================= */
 .bg-layer {
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     background-size: cover; 
     background-position: center; 
@@ -91,8 +117,8 @@ img {
 .main { 
     position: relative; 
     z-index: 5; 
-    width: 100vw; 
-    height: 100vh; 
+    width:100%;
+    height:100%;
     display: flex; 
     opacity: 0; 
     transform: scale(1.04); 
@@ -366,7 +392,7 @@ img {
 
 /* ================= LOADING SCREEN ================= */
 #loading-screen { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 9999; 
     display: flex; 
@@ -374,7 +400,9 @@ img {
     justify-content: center; 
     align-items: center; 
     background: #efefef; 
-    transition: 0.8s; 
+    transition: 0.8s;
+    width:100%;
+    height:100%;
 }
 
 .loaded #loading-screen { 
@@ -410,7 +438,9 @@ img {
 
 /* ================= HUD ================= */
 .hud { 
-    position: fixed; 
+    width:100%;
+    height:100%;
+    position: absolute; 
     inset: 0; 
     pointer-events: none; 
     z-index: 1; 
@@ -464,7 +494,7 @@ img {
 
 /* ================= GACHA & EFFECTS ================= */
 #gacha-overlay { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 120; 
     display: none; 
@@ -504,13 +534,15 @@ img {
 }
 
 #interactive-dots-canvas { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
-    width: 100vw; 
-    height: 100vh; 
+    width:100%;
+    height:100%;
     z-index: 1; 
     pointer-events: none; 
 }
+
+
 
 /* ================= FLASH ANIMATION ================= */
 .flash-wrap { 
@@ -565,8 +597,8 @@ img {
 /* ================= SSR CINEMATIC & PREVIEW ================= */
 .ssr-cinematic { 
     position: relative; 
-    width: 100vw; 
-    height: 100vh; 
+    width: 100%; 
+    height: 100%; 
     overflow: hidden; 
     background: #efefef; 
     display: block; 
@@ -672,7 +704,7 @@ img {
 }
 
 #ssr-preview { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 900; 
     display: none; 
@@ -695,7 +727,7 @@ img {
 
 /* ================= RESULT & REVEAL ================= */
 #result-screen { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 300; 
     display: none; 
@@ -794,13 +826,13 @@ img {
 }
 
 .card.SSR { border-color: #f9a200; }
-.card.SR { border-color: #c6bfce; }
+.card.SR { border-color: #af9dc3; }
 .card.SSR .card-icon { color: #000; }
 .card.SR .card-icon { color: #6e4696; }
 .card.R .card-icon { color: #8d8d8d; }
 
 #single-reveal { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 250; 
     display: none; 
@@ -857,7 +889,7 @@ img {
 
 /* ================= INVENTORY & MASONRY ================= */
 #inv-overlay { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     background: rgba(255, 255, 255, 0.6); 
     z-index: 390; 
@@ -865,7 +897,7 @@ img {
 }
 
 #inv-panel { 
-    position: fixed; 
+    position: absolute; 
     left: 0; 
     bottom: -100%; 
     width: 100%; 
@@ -983,7 +1015,7 @@ img {
 }
 
 #ssr-masonry-overlay { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 1000; 
     background: #0d0d0d; 
@@ -1018,7 +1050,7 @@ img {
 
 /* ================= RATE POPUP ================= */
 #rate-popup { 
-    position: fixed; 
+    position: absolute; 
     inset: 0; 
     z-index: 500; 
     display: none; 
@@ -1105,7 +1137,7 @@ img {
 
 /* ================= CROSSWALK ANIMATION ================= */
 .crosswalk-scene { 
-    position: fixed; 
+    position: absolute; 
     bottom: 20px; 
     left: 50%; 
     transform: translateX(-50%); 
